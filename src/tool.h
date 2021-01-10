@@ -45,7 +45,11 @@ typedef union _Result_Format {
 int new_Data_XY(Data_XY * self);
 int del_Data_XY(Data_XY self);
 
-int Data_XY_forcast(Data_XY self, double x, Str option, F_result result);
+typedef enum _Data_XY_forcast_opt {
+    Linear_interp,
+    Linear_reg
+} Data_XY_forcast_opt;
+int Data_XY_forcast(Data_XY self, double x, Data_XY_forcast_opt option, F_result result);
 
 
 /* Linked-list */
@@ -69,8 +73,8 @@ int List_push(List self, G_PTR value, Str type);
 Node List_pop(List self);
 
 typedef bool (*List_compare_f)(G_PTR, G_PTR);
-bool List_isin(List self, G_PTR, List_compare_f f);
-
+bool List_isin(List self, G_PTR key, List_compare_f f);
+Node List_find(List self, G_PTR key, List_compare_f f);
 /* aux function */
 // strick file name at 256 character
 void rmfileAtrr(char file_name[256]);

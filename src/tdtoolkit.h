@@ -18,6 +18,12 @@
 
 /* Data Structure */
 
+/* key file */
+typedef struct _TD_toolkit_key {
+    /* */
+
+} TD_key;
+
 /* exp configuration */
 typedef struct _Configuration_of_panel {
     // cell
@@ -37,18 +43,20 @@ typedef struct _Opt_Data_at_Each_point {
     Data_XY VT;
     Data_XY VRT;
 } * Opt_data;
+/* Opt_data methods */
 
 /* each condtion */
 typedef struct _Condtion{
     Str desc;
     Config configuration;
     List data;
-    double V99, V90;
-    double RT_V99, RT_V90;
+    double V90, V99; // average of all data
 } * Cond;
 /* Cond methods */
 int new_Cond(Cond * self);
 int del_Cond(Cond self);
 bool Cond_comp_has_point(G_PTR, G_PTR);
-double Cond_find_Volt_at(Cond self, double T);
-double Cond_find_RT_at(Cond self, double volt);
+double Cond_data_progress(Cond self);
+double Cond_find_RT_at(Cond self, double Vw, double cell_gap);
+/* init all data */
+int data_read(List all_cond, Str filename, Str type);
