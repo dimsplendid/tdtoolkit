@@ -34,6 +34,9 @@ typedef struct _Configuration_of_panel {
     Str name;
     Str desc;
 } * Config;
+/* Config methods */
+int new_Config(Config * self);
+int del_Config(Config self);
 
 /* each mesured point */
 typedef struct _Opt_Data_at_Each_point {
@@ -44,6 +47,8 @@ typedef struct _Opt_Data_at_Each_point {
     Data_XY VRT;
 } * Opt_data;
 /* Opt_data methods */
+int new_Opt_data(Opt_data * self);
+int del_Opt_data(Opt_data self);
 
 /* each condtion */
 typedef struct _Condtion{
@@ -59,4 +64,10 @@ bool Cond_comp_has_point(G_PTR, G_PTR);
 double Cond_data_progress(Cond self);
 double Cond_find_RT_at(Cond self, double Vw, double cell_gap);
 /* init all data */
+typedef enum _Input_file_type {
+    Key_file,
+    Axo_file,
+    Opt_file,
+    RT_file
+}
 int data_read(List all_cond, Str filename, Str type);

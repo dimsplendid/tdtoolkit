@@ -42,6 +42,7 @@ typedef union _Result_Format {
     F_linear_reg linear_reg;
 } * F_result;
 /* 2-D data methods */
+
 int new_Data_XY(Data_XY * self);
 int del_Data_XY(Data_XY self);
 

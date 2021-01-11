@@ -20,6 +20,9 @@ int main(void) {
         tmp = tmp->next;
     }
     // print compare table
-
+    Node tmp = all_cond->head;
+    for (uint32_t i = 0; i < all_cond->length; i++) {
+        Cond_print((Cond)(tmp->value));
+    }
     return 0;
 }
