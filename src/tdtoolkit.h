@@ -20,8 +20,7 @@
 
 /* key file */
 typedef struct _TD_toolkit_key {
-    /* */
-
+    Str filename;
 } TD_key;
 
 /* exp configuration */
@@ -44,30 +43,40 @@ typedef struct _Opt_Data_at_Each_point {
     Str point;
     double cell_gap;
     Data_XY VT;
-    Data_XY VRT;
+    Data_XY VRT, VTon, VToff;
 } * Opt_data;
 /* Opt_data methods */
 int new_Opt_data(Opt_data * self);
 int del_Opt_data(Opt_data self);
 
+typedef struct _Vw_cellgapRT {
+    double Vw;
+    Data_XY CellgapRT;
+} * Vw_cellgapRT_data;
 /* each condtion */
 typedef struct _Condtion{
     Str desc;
     Config configuration;
     List data;
-    double V90, V99; // average of all data
+    List Vw_cellgapRT, Vw_cellgapTon;
+    double ref_Ton, given_cell_gap;
+    double result_Vw, result_RT;
 } * Cond;
 /* Cond methods */
 int new_Cond(Cond * self);
 int del_Cond(Cond self);
 bool Cond_comp_has_point(G_PTR, G_PTR);
-double Cond_data_progress(Cond self);
-double Cond_find_RT_at(Cond self, double Vw, double cell_gap);
+int Cond_data_progress(Cond self);
+double Cond_find_Vw_by(Cond self);
+double Cond_find_RT_at(Cond self);
+/* Condition print option, modified later */
+typedef enum _Condition_print_type { OPT } Cond_print_type;
+int Cond_print(Cond self, Cond_print_type opt);
 /* init all data */
 typedef enum _Input_file_type {
     Key_file,
     Axo_file,
     Opt_file,
     RT_file
-}
-int data_read(List all_cond, Str filename, Str type);
+} Input_file_type;
+int data_read(List all_cond, Str filename, Input_file_type type);
