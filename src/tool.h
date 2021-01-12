@@ -19,7 +19,9 @@
 #define MAXDATASIZE 1000000
 
 /* Data Structure */
-typedef char * Str;
+
+/* fixed-length string type */
+typedef struct { char x[100]; } Str; // Maybe a better way?
 
 /* 2-D data */
 typedef struct _Data_XY {
@@ -77,7 +79,7 @@ typedef struct _Linked_List {
 int new_List(List * self);
 // List destructor
 int del_List(List self);
-int List_push(List self, G_PTR value, Str type);
+int List_push(List self, G_PTR value, char * type);
 Node List_pop(List self);
 
 typedef bool (*List_compare_f)(G_PTR origin_node, G_PTR key);

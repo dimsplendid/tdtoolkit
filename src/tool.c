@@ -125,7 +125,7 @@ int del_List(List self) {
     free(self);
     return 0;
 }
-int List_push(List self, G_PTR value, Str type) {
+int List_push(List self, G_PTR value, char* type) {
     Node new_node;
     if (NULL == (new_node = malloc(sizeof(List)))) {
         exit(EXIT_FAILURE);
@@ -133,7 +133,7 @@ int List_push(List self, G_PTR value, Str type) {
     new_node->prev = NULL;
     new_node->next = NULL;
     new_node->value = value;
-    new_node->type = type;
+    strncpy(new_node->type.x,type,100);
     // go to the last node
     Node tmp_node = self->head;
     for(uint32_t i = 0; i < self->length; i++) {
