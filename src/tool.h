@@ -21,8 +21,10 @@
 /* Data Structure */
 
 /* fixed-length string type */
-typedef struct { char x[100]; } Str; // Maybe a better way?
-
+typedef char * Str;
+/* String methods */
+int new_Str(Str * self);
+int del_Str(Str self);
 /* 2-D data */
 typedef struct _Data_XY {
     uint32_t length;
@@ -79,7 +81,7 @@ typedef struct _Linked_List {
 int new_List(List * self);
 // List destructor
 int del_List(List self);
-int List_push(List self, G_PTR value, char * type);
+int List_push(List self, G_PTR value, Str type);
 Node List_pop(List self);
 
 typedef bool (*List_compare_f)(G_PTR origin_node, G_PTR key);

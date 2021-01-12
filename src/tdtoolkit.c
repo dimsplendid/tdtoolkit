@@ -13,6 +13,7 @@ int new_Config(Config * self) {
     if (NULL == (*self = malloc(sizeof(Config)))) {
         exit(EXIT_FAILURE);
     }
+    printf("new config success");
     return 0;
 }
 int del_Config(Config self) {
@@ -24,10 +25,14 @@ int new_Opt_data(Opt_data * self) {
     if (NULL == (*self = malloc(sizeof(Opt_data)))) {
         exit(EXIT_FAILURE);
     }
+    Str id, point;
     Data_XY VT = NULL, VRT = NULL;
+    new_Str(&id);
+    new_Str(&point);
     new_Data_XY(&VT);
     new_Data_XY(&VRT);
-
+    (*self)->id = id;
+    (*self)->point = point;
     (*self)->VT = VT;
     (*self)->VRT = VRT;
 
@@ -43,19 +48,26 @@ int del_Opt_data(Opt_data self) {
 }
 /* Cond methods */
 int new_Cond(Cond * self) {
-    if (NULL == (*self = malloc(sizeof(Cond)))) {
+#ifdef DEBUG
+    printf("sizeof cond: %lu\n", sizeof(Cond));
+#endif
+    if (NULL == (*self = (Cond)calloc(1,sizeof(Cond)))) {
         exit(EXIT_FAILURE);
     }
-    Config new_cfg = NULL;
+#ifdef DEBUG
+    printf("cond calloc ok\n");
+#endif
+    // Config new_cfg = NULL;
     List new_data = NULL;
     List new_Vw_cellgapRT = NULL, new_Vw_cellgapTon = NULL;
-    new_Config(&new_cfg);
-    printf("new cfg  success\n");
+    // new_Config(&new_cfg);
+    // printf("new cfg success\n");
     new_List(&new_data);
     new_List(&new_Vw_cellgapRT);
     new_List(&new_Vw_cellgapTon);
 
-    (* self)->configuration = new_cfg;
+    // (* self)->configuration = new_cfg;
+    new_Str(&((*self)->desc));
     (* self)->data = new_data;
     (* self)->Vw_cellgapRT = new_Vw_cellgapRT;
     (* self)->Vw_cellgapTon = new_Vw_cellgapTon;
@@ -64,7 +76,8 @@ int new_Cond(Cond * self) {
 }
 
 int del_Cond(Cond self) {
-    del_Config(self->configuration);
+    // del_Config(self->configuration);
+    del_Str(self->desc);
     del_List(self->data);
     del_List(self->Vw_cellgapRT);
     del_List(self->Vw_cellgapTon);
@@ -74,7 +87,7 @@ int del_Cond(Cond self) {
 bool Cond_comp_has_point(G_PTR A, G_PTR B){
     Opt_data opt_data_A = (Opt_data)A;
     Opt_data opt_data_B = (Opt_data)B;
-    return (strncmp(opt_data_A->id.x, opt_data_B->id.x,100) == 0) && (strncmp(opt_data_A->point.x, opt_data_B->point.x,100) == 0);
+    return (strncmp(opt_data_A->id, opt_data_B->id,100) == 0) && (strncmp(opt_data_A->point, opt_data_B->point,100) == 0);
 }
 
 bool volt_cmp_f(G_PTR Vw_cellgapRT, G_PTR number) {
@@ -85,7 +98,7 @@ bool volt_cmp_f(G_PTR Vw_cellgapRT, G_PTR number) {
 // 1. fitting cell_gap - RT for each Vw (linear regression)
 int Cond_data_progress(Cond self) {
     if(self->data->length < 1) {
-        printf("There is no data in \"%s\" condition", self->desc.x);
+        printf("There is no data in \"%s\" condition", self->desc);
         return 1;
     }
     uint32_t count_measure_V = ((Opt_data)(self->data))->VRT->length;
@@ -120,7 +133,7 @@ double Cond_find_Vw_by(Cond self) {
     double cell_gap = self->given_cell_gap;
     double Ton = self->ref_Ton;
     if (self->Vw_cellgapTon->length < 1) {
-        printf("The %s condition do not have Ton data now.\n", self->desc.x);
+        printf("The %s condition do not have Ton data now.\n", self->desc);
     }
     double Vw = 0.0;
     Data_XY Vw_Ton_at_certain_cell_gap = NULL;
@@ -145,7 +158,7 @@ double Cond_find_Vw_by(Cond self) {
 // 3. fitting RT for certain voltage
 double Cond_find_RT_at(Cond self){
     if (self->Vw_cellgapRT->length < 1) {
-        printf("The %s condition do not have RT data now.\n", self->desc.x);
+        printf("The %s condition do not have RT data now.\n", self->desc);
     }
     double cell_gap = self->given_cell_gap;
     double Vw = self->result_Vw;
@@ -171,18 +184,18 @@ double Cond_find_RT_at(Cond self){
 
 
 int Cond_print(Cond self, Cond_print_type option) {
-    printf("Cond: %s, RT = %.2lf when Vw is %.2f at the given ref Ton = %.2lf",self->desc.x, self->result_RT, self->result_Vw, self->ref_Ton);
+    printf("Cond: %s, RT = %.2lf when Vw is %.2f at the given ref Ton = %.2lf",self->desc, self->result_RT, self->result_Vw, self->ref_Ton);
     return 0;
 }
 
 bool axo_cond_cmp_f(G_PTR ori_val, G_PTR key) {
-    if(strncmp(((Cond)ori_val)->desc.x, key,100) == 0) {
+    if(strncmp(((Cond)ori_val)->desc, key,100) == 0) {
         return true;
     }
     return false;
 }
 
-int data_read(List all_cond, char * filename, Input_file_type file_type) {
+int data_read(List all_cond, Str filename, Input_file_type file_type) {
     FILE * f;
     f = fopen(filename, "r");
     // skip first line
@@ -196,42 +209,114 @@ int data_read(List all_cond, char * filename, Input_file_type file_type) {
         break;
     case Axo_file: 
         {
-            Str id_point, index, LC, id, id_short, point, cell_gap;
+            Str id_point = calloc(100, sizeof(char));
+            Str index = calloc(100, sizeof(char));
+            Str LC = calloc(100, sizeof(char));
+            Str id = calloc(100, sizeof(char));
+            Str id_short = calloc(100, sizeof(char));
+            Str point = calloc(100, sizeof(char));
+            Str cell_gap = calloc(100, sizeof(char));
             while(fgets(buf, sizeof(buf), f) != NULL) {
-                sscanf(buf, "%s %s %s %s %s %s %s",id_point.x, index.x, LC.x, id.x, id_short.x, point.x, cell_gap.x);
-                printf("%s %s %s %s %s %s %s\n",id_point.x, index.x, LC.x, id.x, id_short.x, point.x, cell_gap.x);
+                sscanf(buf, "%s %s %s %s %s %s %s",id_point, index, LC, id, id_short, point, cell_gap);
+                #ifdef DEBUG
+                printf("%s %s %s %s %s %s %s\n",id_point, index, LC, id, id_short, point, cell_gap);
+                #endif
                 // create new measure point in each cond
                 Opt_data new_data_point = NULL;
                 new_Opt_data(&new_data_point);
-                strncpy(new_data_point->id.x, id.x, 100);
-                strncpy(new_data_point->point.x, point.x, 100);
-                new_data_point->cell_gap = atof(cell_gap.x);
+                printf("new Opt_data OK\n");
+                strncpy(new_data_point->id, id, 100);
+                strncpy(new_data_point->point, point, 100);
+                new_data_point->cell_gap = atof(cell_gap);
                 // find if LC in the list, otherwise create one
                 Node tmp_cond_node = NULL;
-                tmp_cond_node = List_find(all_cond, LC.x, axo_cond_cmp_f);
+                tmp_cond_node = List_find(all_cond, LC, axo_cond_cmp_f);
                 if (tmp_cond_node) {
                     List_push(((Cond)(tmp_cond_node->value))->data,new_data_point, "Opt_data");
                 } else {
                     Cond new_cond = NULL;
                     new_Cond(&new_cond);
-                    printf("new cond sucess\n");
-                    strncpy(new_cond->desc.x, LC.x, 100);
+                    strncpy(new_cond->desc, LC, 100);
+                    #ifdef DEBUG
+                    printf("cond: %s\n", new_cond->desc);
+                    #endif
                     List_push(new_cond->data,new_data_point,"Opt_data");
+                    #ifdef DEBUG
+                    printf("point data list push sucess\n");
+                    #endif
                     List_push(all_cond, new_cond, "Cond");
+                    #ifdef DEBUG
+                    printf("cond list push sucess\n");
+                    #endif
                 }
             }
         }
         break;
     case Opt_file:
         {
-            Str Data, M_Time, id, point, Station, Operator, Voltage, Itime, AR_T_1, AR_T_2, LCM_X, LCM_Y, LCM_Z, RX, RY, RZ, GX, GY, GZ, BX, BY, BZ, WX, WY, WZ, CG, R_x, R_y, G_x, G_y, B_x, B_y, W_x, W_y, RX_max, GY_max, BZ_max, V_RX_max, V_GY_max, V_BZ_max, WX_, WY_, WZ_, W_x_1, W_x_2;
+            Str Data = NULL, M_Time = NULL, id = NULL, point = NULL, Station = NULL, Operator = NULL, Voltage = NULL, Itime = NULL, AR_T_1 = NULL, AR_T_2 = NULL, LCM_X = NULL, LCM_Y = NULL, LCM_Z = NULL, RX = NULL, RY = NULL, RZ = NULL, GX = NULL, GY = NULL, GZ = NULL, BX = NULL, BY = NULL, BZ = NULL, WX = NULL, WY = NULL, WZ = NULL, CG = NULL, R_x = NULL, R_y = NULL, G_x = NULL, G_y = NULL, B_x = NULL, B_y = NULL, W_x = NULL, W_y = NULL, RX_max = NULL, GY_max = NULL, BZ_max = NULL, V_RX_max = NULL, V_GY_max = NULL, V_BZ_max = NULL, WX_ = NULL, WY_ = NULL, WZ_ = NULL, W_x_1 = NULL, W_x_2 = NULL;
+            
+            new_Str(&Data);
+            new_Str(&M_Time);
+            new_Str(&id);
+            new_Str(&point);
+            new_Str(&Station);
+            new_Str(&Operator);
+            new_Str(&Voltage);
+            new_Str(&Itime);
+            new_Str(&AR_T_1);
+            new_Str(&AR_T_2);
+            new_Str(&LCM_X);
+            new_Str(&LCM_Y);
+            new_Str(&LCM_Z);
+            new_Str(&RX);
+            new_Str(&RY);
+            new_Str(&RZ);
+            new_Str(&GX);
+            new_Str(&GY);
+            new_Str(&GZ);
+            new_Str(&BX);
+            new_Str(&BY);
+            new_Str(&BZ);
+            new_Str(&WX);
+            new_Str(&WY);
+            new_Str(&WZ);
+            new_Str(&CG);
+            new_Str(&R_x);
+            new_Str(&R_y);
+            new_Str(&G_x);
+            new_Str(&G_y);
+            new_Str(&B_x);
+            new_Str(&B_y);
+            new_Str(&W_x);
+            new_Str(&W_y);
+            new_Str(&RX_max);
+            new_Str(&GY_max);
+            new_Str(&BZ_max);
+            new_Str(&V_RX_max);
+            new_Str(&V_GY_max);
+            new_Str(&V_BZ_max);
+            new_Str(&WX_);
+            new_Str(&WY_);
+            new_Str(&WZ_);
+            new_Str(&W_x_1);
+            new_Str(&W_x_2);
+            #ifdef DEBUG
+            printf("string calloc sussess\n");
+            #endif
             while(fgets(buf, sizeof(buf), f) != NULL) {
-                sscanf(buf, "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s", Data.x, M_Time.x, id.x, point.x, Station.x, Operator.x, Voltage.x, Itime.x, AR_T_1.x, AR_T_2.x, LCM_X.x, LCM_Y.x, LCM_Z.x, RX.x, RY.x, RZ.x, GX.x, GY.x, GZ.x, BX.x, BY.x, BZ.x, WX.x, WY.x, WZ.x, CG.x, R_x.x, R_y.x, G_x.x, G_y.x, B_x.x, B_y.x, W_x.x, W_y.x, RX_max.x, GY_max.x, BZ_max.x, V_RX_max.x, V_GY_max.x, V_BZ_max.x, WX_.x, WY_.x, WZ_.x, W_x_1.x, W_x_2.x);
+                sscanf(buf, "%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%s", Data, M_Time, id, point, Station, Operator, Voltage, Itime, AR_T_1, AR_T_2, LCM_X, LCM_Y, LCM_Z, RX, RY, RZ, GX, GY, GZ, BX, BY, BZ, WX, WY, WZ, CG, R_x, R_y, G_x, G_y, B_x, B_y, W_x, W_y, RX_max, GY_max, BZ_max, V_RX_max, V_GY_max, V_BZ_max, WX_, WY_, WZ_, W_x_1, W_x_2);
+                #ifdef DEBUG
+                printf("parser ok...\n");
+                #endif
                 // create new measure point in each cond
                 Opt_data opt_data_point = NULL;
                 new_Opt_data(&opt_data_point);
-                strncpy(opt_data_point->id.x, id.x, 100);
-                strncpy(opt_data_point->point.x, point.x, 100);
+                strncpy(opt_data_point->id, id, 100);
+                strncpy(opt_data_point->point, point, 100);
+                #ifdef DEBUG
+                printf("opt id-point: %s-%s\n", opt_data_point->id, opt_data_point->point);
+                #endif
                 // find if LC in the list, otherwise create one
                 Node tmp_has_opt_cond_node = NULL;
                 Node tmp_cond_node = all_cond->head;
@@ -240,22 +325,59 @@ int data_read(List all_cond, char * filename, Input_file_type file_type) {
                     if (tmp_has_opt_cond_node) {
                         break;
                     }
+                    tmp_cond_node = tmp_cond_node->next;
                 }
+                #ifdef DEBUG
+                if (tmp_has_opt_cond_node == NULL) {
+                    printf("something wrong\n");
+                } else {
+                    printf("%p\n", tmp_has_opt_cond_node);
+                    printf("cond: %s-%s\n", ((Opt_data)(tmp_has_opt_cond_node->value))->id, ((Opt_data)(tmp_has_opt_cond_node->value))->point);
+                }
+                #endif 
                 del_Opt_data(opt_data_point);
-                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VT,atof(Voltage.x), atof(LCM_Y.x));
+                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VT,atof(Voltage), atof(LCM_Y));
             }
         }
         break;
     case RT_file:
         {
-            Str data, time, id, point, station, operator, cell_pos, Target_Vpk, Initial_Vpk, OD_Rise, OD_fall, Normalized_V, Specific_target, Photo, Sensor, temp_Sensor, tempC, product, Ton_1090_mean, Ton_1090_stdev, Toff_1090_mean, Toff_1090_stdev, Ton_0595_mean, Ton_0595_stdev, Toff_0595_mean, Toff_0595_stdev;
+            Str data = NULL, time = NULL, id = NULL, point = NULL, station = NULL, operator = NULL, cell_pos = NULL, Target_Vpk = NULL, Initial_Vpk = NULL, OD_Rise = NULL, OD_fall = NULL, Normalized_V = NULL, Specific_target = NULL, Photo = NULL, Sensor = NULL, temp_Sensor = NULL, tempC = NULL, product = NULL, Ton_1090_mean = NULL, Ton_1090_stdev = NULL, Toff_1090_mean = NULL, Toff_1090_stdev = NULL, Ton_0595_mean = NULL, Ton_0595_stdev = NULL, Toff_0595_mean = NULL, Toff_0595_stdev = NULL;
+            
+            new_Str(&data);
+            new_Str(&time);
+            new_Str(&id);
+            new_Str(&point);
+            new_Str(&station);
+            new_Str(&operator);
+            new_Str(&cell_pos);
+            new_Str(&Target_Vpk);
+            new_Str(&Initial_Vpk);
+            new_Str(&OD_Rise);
+            new_Str(&OD_fall);
+            new_Str(&Normalized_V);
+            new_Str(&Specific_target);
+            new_Str(&Photo);
+            new_Str(&Sensor);
+            new_Str(&temp_Sensor);
+            new_Str(&tempC);
+            new_Str(&product);
+            new_Str(&Ton_1090_mean);
+            new_Str(&Ton_1090_stdev);
+            new_Str(&Toff_1090_mean);
+            new_Str(&Toff_1090_stdev);
+            new_Str(&Ton_0595_mean);
+            new_Str(&Ton_0595_stdev);
+            new_Str(&Toff_0595_mean);
+            new_Str(&Toff_0595_stdev);
+            
             while(fgets(buf, sizeof(buf), f) != NULL) {
-                sscanf(buf, "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s", data.x, time.x, id.x, point.x, station.x, operator.x, cell_pos.x, Target_Vpk.x, Initial_Vpk.x, OD_Rise.x, OD_fall.x, Normalized_V.x, Specific_target.x, Photo.x, Sensor.x, temp_Sensor.x, tempC.x, product.x, Ton_1090_mean.x, Ton_1090_stdev.x, Toff_1090_mean.x, Toff_1090_stdev.x, Ton_0595_mean.x, Ton_0595_stdev.x, Toff_0595_mean.x, Toff_0595_stdev.x);
+                sscanf(buf, "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s", data, time, id, point, station, operator, cell_pos, Target_Vpk, Initial_Vpk, OD_Rise, OD_fall, Normalized_V, Specific_target, Photo, Sensor, temp_Sensor, tempC, product, Ton_1090_mean, Ton_1090_stdev, Toff_1090_mean, Toff_1090_stdev, Ton_0595_mean, Ton_0595_stdev, Toff_0595_mean, Toff_0595_stdev);
                 // create new measure point in each cond
                 Opt_data opt_data_point = NULL;
                 new_Opt_data(&opt_data_point);
-                strncpy(opt_data_point->id.x, id.x, 100);
-                strncpy(opt_data_point->point.x, point.x, 100);
+                strncpy(opt_data_point->id, id, 100);
+                strncpy(opt_data_point->point, point, 100);
                 // find if LC in the list, otherwise create one
                 Node tmp_has_opt_cond_node = NULL;
                 Node tmp_cond_node = all_cond->head;
@@ -265,10 +387,18 @@ int data_read(List all_cond, char * filename, Input_file_type file_type) {
                         break;
                     }
                 }
+                #ifdef DEBUG
+                if (tmp_has_opt_cond_node == NULL) {
+                    printf("something wrong\n");
+                } else {
+                    printf("%p\n", tmp_has_opt_cond_node);
+                    printf("cond: %s-%s\n", ((Opt_data)(tmp_has_opt_cond_node->value))->id, ((Opt_data)(tmp_has_opt_cond_node->value))->point);
+                }
+                #endif 
                 del_Opt_data(opt_data_point);
-                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VRT,atof(Target_Vpk.x), atof(Ton_1090_mean.x)+atof(Toff_1090_mean.x));
-                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VTon, atof(Target_Vpk.x), atof(Ton_1090_mean.x));
-                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VToff, atof(Target_Vpk.x), atof(Toff_1090_mean.x));
+                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VRT,atof(Target_Vpk), atof(Ton_1090_mean)+atof(Toff_1090_mean));
+                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VTon, atof(Target_Vpk), atof(Ton_1090_mean));
+                Data_XY_add(((Opt_data)(tmp_has_opt_cond_node->value))->VToff, atof(Target_Vpk), atof(Toff_1090_mean));
             }
         }
         break;

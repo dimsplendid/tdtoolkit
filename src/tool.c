@@ -8,6 +8,19 @@
  */
 
 #include "tool.h"
+
+/* String method */
+int new_Str(Str * self) {
+    if(NULL == (*self = calloc(100, sizeof(char)))) {
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
+int del_Str(Str self) {
+    free(self);
+    return 0;
+}
+
 /* Result store methods */
 int new_F_result(F_result * self, Data_XY_forcast_opt option) {
     if (NULL == (*self = malloc(sizeof(F_result)))) {
@@ -114,6 +127,9 @@ int new_List(List * self){
     }
     (* self)->head = NULL;
     (* self)->length = 0;
+#ifdef DEBUG
+    printf("List OK\n");
+#endif
     return 0;
 }
 int del_List(List self) {
@@ -125,23 +141,36 @@ int del_List(List self) {
     free(self);
     return 0;
 }
-int List_push(List self, G_PTR value, char* type) {
+int List_push(List self, G_PTR value, Str type) {
     Node new_node;
-    if (NULL == (new_node = malloc(sizeof(List)))) {
+    if (NULL == (new_node = calloc(1, sizeof(List)))) {
         exit(EXIT_FAILURE);
     }
+    #ifdef DEBUG
+    printf("node calloc sucess\n");
+    #endif
     new_node->prev = NULL;
     new_node->next = NULL;
     new_node->value = value;
-    strncpy(new_node->type.x,type,100);
+    #ifdef DEBUG
+    printf("new string ...\n");
+    #endif
+    new_Str(&(new_node->type));
+    #ifdef DEBUG
+    printf("new string success\n");
+    #endif
+    strncpy(new_node->type,type,100);
     // go to the last node
     Node tmp_node = self->head;
-    for(uint32_t i = 0; i < self->length; i++) {
-        tmp_node = tmp_node->next;
+    if (tmp_node == NULL) {
+        tmp_node = new_node;
+    } else {
+        for(uint32_t i = 0; i < self->length; i++) {
+            tmp_node = tmp_node->next;
+        }
+        tmp_node->next = new_node;
+        new_node->prev = tmp_node;
     }
-    tmp_node->next = new_node;
-    new_node->prev = tmp_node;
-    
     return 0;
 }
 Node List_pop(List self) {

@@ -56,7 +56,7 @@ typedef struct _Vw_cellgapRT {
 /* each condtion */
 typedef struct _Condtion {
     Str desc;
-    Config configuration;
+    // Config configuration;
     List data; // each point opt data
     List Vw_cellgapRT, Vw_cellgapTon;
     double ref_Ton, given_cell_gap;
@@ -79,4 +79,4 @@ typedef enum _Input_file_type {
     Opt_file,
     RT_file
 } Input_file_type;
-int data_read(List all_cond, char * filename, Input_file_type type);
+int data_read(List all_cond, Str filename, Input_file_type type);
