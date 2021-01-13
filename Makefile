@@ -33,8 +33,8 @@ tdtoolkit_win.o: src/tdtoolkit.h src/tdtoolkit.c
 tool_win.o: src/tool.h src/tool.c
 	$(WCC) -c src/tool.c -o tool_win.o 
 
-test: src/test_input.c
-	$(CC) -o bin/test_input src/test_input.c
+test: src/test.c tool.o tdtoolkit.o
+	$(CC) $(CFLAGS) -o test tool.o tdtoolkit.o src/test.c
 
 testWindows: src/test_input.c
 	$(WCC) -o bin/test_input.exe src/test_input.c

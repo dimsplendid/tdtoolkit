@@ -13,7 +13,6 @@ int new_Config(Config * self) {
     if (NULL == (*self = malloc(sizeof(Config)))) {
         exit(EXIT_FAILURE);
     }
-    printf("new config success");
     return 0;
 }
 int del_Config(Config self) {
@@ -46,16 +45,23 @@ int del_Opt_data(Opt_data self) {
     
     return 0;
 }
+
+int Opt_data_print(Opt_data self) {
+    printf("id-point\tcell gap\n");
+    printf("%s-%s\t%lf\n",self->id, self->point, self->cell_gap);
+    return 0;
+}
+
 /* Cond methods */
 int new_Cond(Cond * self) {
 #ifdef DEBUG
-    printf("sizeof cond: %lu\n", sizeof(Cond));
+    // printf("sizeof cond: %lu\n", sizeof(Cond));
 #endif
     if (NULL == (*self = (Cond)calloc(1,sizeof(Cond)))) {
         exit(EXIT_FAILURE);
     }
 #ifdef DEBUG
-    printf("cond calloc ok\n");
+    // printf("cond calloc ok\n");
 #endif
     // Config new_cfg = NULL;
     List new_data = NULL;
@@ -209,47 +215,59 @@ int data_read(List all_cond, Str filename, Input_file_type file_type) {
         break;
     case Axo_file: 
         {
-            Str id_point = calloc(100, sizeof(char));
-            Str index = calloc(100, sizeof(char));
-            Str LC = calloc(100, sizeof(char));
-            Str id = calloc(100, sizeof(char));
-            Str id_short = calloc(100, sizeof(char));
-            Str point = calloc(100, sizeof(char));
-            Str cell_gap = calloc(100, sizeof(char));
+            Str id_point = NULL, index = NULL, LC = NULL, id = NULL, id_short = NULL, point = NULL, cell_gap = NULL;
+            new_Str(&id_point);
+            new_Str(&index);
+            new_Str(&LC);
+            new_Str(&id);
+            new_Str(&id_short);
+            new_Str(&point);
+            new_Str(&cell_gap);
             while(fgets(buf, sizeof(buf), f) != NULL) {
                 sscanf(buf, "%s %s %s %s %s %s %s",id_point, index, LC, id, id_short, point, cell_gap);
-                #ifdef DEBUG
-                printf("%s %s %s %s %s %s %s\n",id_point, index, LC, id, id_short, point, cell_gap);
+                #ifdef VERBOSE
+                printf("%s\t%s\t%s\t%s\n", LC, id, point, cell_gap);
                 #endif
                 // create new measure point in each cond
                 Opt_data new_data_point = NULL;
                 new_Opt_data(&new_data_point);
-                printf("new Opt_data OK\n");
                 strncpy(new_data_point->id, id, 100);
                 strncpy(new_data_point->point, point, 100);
                 new_data_point->cell_gap = atof(cell_gap);
+                #ifdef DEBUG
+                printf("new_data:\n");
+                Opt_data_print(new_data_point);
+                printf("die here?\n");
+                #endif
                 // find if LC in the list, otherwise create one
                 Node tmp_cond_node = NULL;
                 tmp_cond_node = List_find(all_cond, LC, axo_cond_cmp_f);
                 if (tmp_cond_node) {
+                    printf("no such cond\n");
                     List_push(((Cond)(tmp_cond_node->value))->data,new_data_point, "Opt_data");
                 } else {
                     Cond new_cond = NULL;
                     new_Cond(&new_cond);
                     strncpy(new_cond->desc, LC, 100);
-                    #ifdef DEBUG
-                    printf("cond: %s\n", new_cond->desc);
-                    #endif
                     List_push(new_cond->data,new_data_point,"Opt_data");
-                    #ifdef DEBUG
-                    printf("point data list push sucess\n");
-                    #endif
                     List_push(all_cond, new_cond, "Cond");
-                    #ifdef DEBUG
-                    printf("cond list push sucess\n");
-                    #endif
                 }
             }
+            #ifdef DEBUG
+            // maybe do a List iteration?
+            Node tmp_cond_node = all_cond->head;
+            printf("all_cond length: %" PRIu32 "\n", all_cond->length);
+            for(uint32_t i = 0; i < all_cond->length; i++) {
+                printf("Condition: %s\n:", ((Cond)(tmp_cond_node->value))->desc);
+                Node tmp_opt_node = ((Cond)(tmp_cond_node->value))->data->head;
+                for(uint32_t j = 0; j < ((Cond)(tmp_cond_node->value))->data->length; j++) {
+                    Opt_data tmp_opt_data = tmp_opt_node->value;
+                    printf("Opt id-point: %s-%s, %.3lf um\n", tmp_opt_data->id, tmp_opt_data->point, tmp_opt_data->cell_gap);
+                    tmp_opt_node = tmp_opt_node->next;
+                }
+                tmp_cond_node = tmp_cond_node->next;
+            }
+            #endif
         }
         break;
     case Opt_file:
@@ -302,12 +320,13 @@ int data_read(List all_cond, Str filename, Input_file_type file_type) {
             new_Str(&W_x_1);
             new_Str(&W_x_2);
             #ifdef DEBUG
-            printf("string calloc sussess\n");
+            // printf("string calloc sussess\n");
             #endif
             while(fgets(buf, sizeof(buf), f) != NULL) {
                 sscanf(buf, "%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%[^','],%s", Data, M_Time, id, point, Station, Operator, Voltage, Itime, AR_T_1, AR_T_2, LCM_X, LCM_Y, LCM_Z, RX, RY, RZ, GX, GY, GZ, BX, BY, BZ, WX, WY, WZ, CG, R_x, R_y, G_x, G_y, B_x, B_y, W_x, W_y, RX_max, GY_max, BZ_max, V_RX_max, V_GY_max, V_BZ_max, WX_, WY_, WZ_, W_x_1, W_x_2);
                 #ifdef DEBUG
-                printf("parser ok...\n");
+                // printf("parser ok...\n");
+                printf("%s-%s %s\n", id, point, LCM_Y);
                 #endif
                 // create new measure point in each cond
                 Opt_data opt_data_point = NULL;
@@ -321,6 +340,9 @@ int data_read(List all_cond, Str filename, Input_file_type file_type) {
                 Node tmp_has_opt_cond_node = NULL;
                 Node tmp_cond_node = all_cond->head;
                 for (uint32_t i = 0; i < all_cond->length; i++) {
+                    #ifdef DEBUG
+                    printf("Find if there is panel-point in condition %s", ((Cond)(tmp_cond_node->value))->desc);
+                    #endif
                     tmp_has_opt_cond_node = List_find(((Cond)(tmp_cond_node->value))->data, opt_data_point, Cond_comp_has_point);
                     if (tmp_has_opt_cond_node) {
                         break;
@@ -330,6 +352,7 @@ int data_read(List all_cond, Str filename, Input_file_type file_type) {
                 #ifdef DEBUG
                 if (tmp_has_opt_cond_node == NULL) {
                     printf("something wrong\n");
+                    exit(EXIT_FAILURE);
                 } else {
                     printf("%p\n", tmp_has_opt_cond_node);
                     printf("cond: %s-%s\n", ((Opt_data)(tmp_has_opt_cond_node->value))->id, ((Opt_data)(tmp_has_opt_cond_node->value))->point);

@@ -128,7 +128,7 @@ int new_List(List * self){
     (* self)->head = NULL;
     (* self)->length = 0;
 #ifdef DEBUG
-    printf("List OK\n");
+    // printf("List OK\n");
 #endif
     return 0;
 }
@@ -147,18 +147,12 @@ int List_push(List self, G_PTR value, Str type) {
         exit(EXIT_FAILURE);
     }
     #ifdef DEBUG
-    printf("node calloc sucess\n");
+    // printf("node calloc sucess\n");
     #endif
     new_node->prev = NULL;
     new_node->next = NULL;
     new_node->value = value;
-    #ifdef DEBUG
-    printf("new string ...\n");
-    #endif
     new_Str(&(new_node->type));
-    #ifdef DEBUG
-    printf("new string success\n");
-    #endif
     strncpy(new_node->type,type,100);
     // go to the last node
     Node tmp_node = self->head;
@@ -171,6 +165,7 @@ int List_push(List self, G_PTR value, Str type) {
         tmp_node->next = new_node;
         new_node->prev = tmp_node;
     }
+    self->length += 1;
     return 0;
 }
 Node List_pop(List self) {

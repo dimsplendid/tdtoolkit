@@ -1,29 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef char * Str;
-
-typedef struct _test {
-    Str str;
-    void * value;
-} * test;
-
-int new_test(test * self) {
-    * self = calloc(1, sizeof(test));
-    char * str = calloc(100, sizeof(char));
-    (*self)->str = str;
-
-    return 0;
-}
+#include "tool.h"
+#include "tdtoolkit.h"
 
 int main(void) {
-    char * h = "hello world";
-    test new_data = NULL;
-    new_test(&new_data);
-    printf("copy str\n");
-    strncpy(new_data->str, h,100);
-    printf("%s\n", new_data->str);
+    Opt_data A = NULL, B = NULL;
+    new_Opt_data(&A);
+    new_Opt_data(&B);
 
+    A->id = "TAXXXAT1";
+    A->point = "1";
+    A->cell_gap = 2.8;
+
+    B->id = "TAXXXAT1";
+    B->point = "1";
+    // Data_XY_add(B->VT, 0, 0);
+
+    printf("A == B?: %d\n", Cond_comp_has_point(A, B));
+    
     return 0;
 }

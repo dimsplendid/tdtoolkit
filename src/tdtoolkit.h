@@ -48,6 +48,7 @@ typedef struct _Opt_Data_at_Each_point {
 /* Opt_data methods */
 int new_Opt_data(Opt_data * self);
 int del_Opt_data(Opt_data self);
+int Opt_data_print(Opt_data self);
 
 typedef struct _Vw_cellgapRT {
     double Vw;
